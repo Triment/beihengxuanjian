@@ -246,7 +246,16 @@ class Scene extends BaseShape {
         if (!this.ctx) {
             throw new Error('Failed to get canvas context');
         }
+        const dpr = window.devicePixelRatio || 1;
 
+
+        this.canvas.style.width = this.canvas.width + 'px';
+        this.canvas.style.height = this.canvas.height + 'px';
+
+        this.canvas.width *= dpr;
+        this.canvas.height *= dpr;
+
+        this.ctx.scale(dpr, dpr); // 确保绘制正常尺寸
         // 设置场景大小为画布大小
         this.width = this.canvas.width;
         this.height = this.canvas.height;
@@ -336,20 +345,52 @@ document.addEventListener('DOMContentLoaded', () => {
     let palaceWidth = 160;//宫位宽度
     let palaceHeight = 200;//宫位高度
     let footHeight = 60;//底部高度
+    let xOffset = 60;//宫位间距
+    let yOffset = 60;//宫位间距
     let plate = new Ziwei.Plate({
-        year: 1995,
-        month: 12,
-        day: 3,
-        hour: 12,
+        year: 1994,
+        month: 9,
+        day: 24,
+        hour: 23,
         minute: 12,
         second: 12,
     });
-    console.log(plate.getPalaces())
+    const threeChanges: Record<string, string[]> = {
+        '甲': ['廉贞', '破军', '武曲', '太阳'],
+        '乙': ['天机', '天梁', '紫微', '太阴'],
+        '丙': ['天同', '天机', '文昌', '廉贞'],
+        '丁': ['太阴', '天同', '天机', '巨门'],
+        '戊': ['贪狼', '太阴', '右弼', '天机'],
+        '己': ['武曲', '贪狼', '天梁', '文曲'],
+        '庚': ['太阳', '武曲', '太阴', '天同'],
+        '辛': ['巨门', '太阳', '文曲', '文昌'],
+        '壬': ['天梁', '紫微', '左辅', '武曲'],
+        '癸': ['破军', '巨门', '太阴', '贪狼'],
+    }
+    const sihuaStyle: Record<string, string> = {
+        'A': 'green',
+        'B': 'purple',
+        'C': 'blue',
+        'D': 'red',
+    }
+    console.log(plate.getPalaces(), threeChanges[plate.eightChar.getYear().getHeavenStem().toString() as string])
+    // 创建宫位容器并添加到场景
+    const sihua = threeChanges[plate.eightChar.getYear().getHeavenStem().toString() as string]
     for (const index in coordinates) {
         let [x,y] = coordinates[index]
-        let palace = new PalaceContainer(x * palaceWidth, y * palaceHeight, palaceWidth, palaceHeight, 'black');
+        let palace = new PalaceContainer(x * palaceWidth + xOffset, y * palaceHeight +yOffset, palaceWidth, palaceHeight, 'black');
+        if (plate.getPalaces()[index].isOrigin) {
+            palace.addChild(new CustomText(palaceWidth-30, palaceHeight-footHeight-80, '来因宫', '20px Arial', 'red'));
+        }
         for (const i in plate.getPalaces()[index].stars) {
-            palace.addChild(new CustomText(Number(i)*20, 0, plate.getPalaces()[index].stars[i].name, '20px Arial', 'green'))
+            for (const j in sihua) {
+                if (plate.getPalaces()[index].stars[i].name === sihua[j]) {
+                    palace.addChild(new CustomText(Number(i)*20, 0, plate.getPalaces()[index].stars[i].name+String.fromCharCode(65+Number(j)), '20px Arial', sihuaStyle[String.fromCharCode(65+Number(j))]));
+                } else {
+                    palace.addChild(new CustomText(Number(i)*20, 0, plate.getPalaces()[index].stars[i].name, '20px Arial', 'black'));
+
+                }
+            }
         }
         let bigStage = new Rectangle(0, palaceHeight - footHeight, palaceWidth/4, footHeight, 'black');
         bigStage.addChild(new CustomText(palaceWidth/8-10, (footHeight-38)/2, plate.getPalaces()[index].stemBranch.stem+plate.getPalaces()[index].stemBranch.branch, '20px Arial', 'black'));
