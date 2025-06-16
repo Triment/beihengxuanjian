@@ -1,3 +1,6 @@
+// 使用全局变量Ziwei，它由CDN脚本提供
+declare const Ziwei: any;
+
 // 事件接口
 interface HandleEvent {
     type: string;
@@ -194,7 +197,7 @@ class CustomText extends BaseShape {
         x: number,
         y: number,
         public text: string,
-        public font: string = '16px Arial',
+        public font: string = '18px Arial',
         public fillColor: string = 'black'
     ) {
         super(x, y, 0, 0); // 宽高将在绘制时计算
@@ -202,15 +205,19 @@ class CustomText extends BaseShape {
 
     draw(ctx: CanvasRenderingContext2D): void {
         const absX = this.getAbsoluteX();
-        const absY = this.getAbsoluteY();
+        let absY = this.getAbsoluteY();
 
         ctx.font = this.font;
         ctx.fillStyle = this.fillColor;
-        ctx.fillText(this.text, absX, absY + 16); // 加16是为了基线对齐
+        this.text.split('').forEach((item) => {
+            absY += 20
+            ctx.fillText(item, absX, absY);
+        })
+        //ctx.fillText(this.text, absX, absY + 18); // 加16是为了基线对齐
 
         // 更新宽高（用于点击检测）
-        this.width = ctx.measureText(this.text).width;
-        this.height = 16; // 近似字体高度
+        this.width = ctx.measureText(this.text.split('')[0]).width;
+        this.height = absY+20; // 近似字体高度
 
         // 绘制子元素
         this.children.forEach(child => child.draw(ctx));
@@ -328,15 +335,29 @@ document.addEventListener('DOMContentLoaded', () => {
     ]
     let palaceWidth = 160;//宫位宽度
     let palaceHeight = 200;//宫位高度
-
-    let Palaces = [
-        new PalaceContainer(0, 0, 90, 120, 'black'),
-        new PalaceContainer(0, 120, 90, 120, 'black'),
-        new PalaceContainer(90, 0, 90, 120, 'black'),
-        new PalaceContainer(90, 120, 90, 120, 'black'),
-    ];
-    for (const [x, y] of coordinates) {
+    let footHeight = 60;//底部高度
+    let plate = new Ziwei.Plate({
+        year: 1995,
+        month: 12,
+        day: 3,
+        hour: 12,
+        minute: 12,
+        second: 12,
+    });
+    console.log(plate.getPalaces())
+    for (const index in coordinates) {
+        let [x,y] = coordinates[index]
         let palace = new PalaceContainer(x * palaceWidth, y * palaceHeight, palaceWidth, palaceHeight, 'black');
+        for (const i in plate.getPalaces()[index].stars) {
+            palace.addChild(new CustomText(Number(i)*20, 0, plate.getPalaces()[index].stars[i].name, '20px Arial', 'green'))
+        }
+        let bigStage = new Rectangle(0, palaceHeight - footHeight, palaceWidth/4, footHeight, 'black');
+        bigStage.addChild(new CustomText(palaceWidth/8-10, (footHeight-38)/2, plate.getPalaces()[index].stemBranch.stem+plate.getPalaces()[index].stemBranch.branch, '20px Arial', 'black'));
+        palace.addChild(bigStage);
+        palace.addChild(new Rectangle(palaceWidth/4, palaceHeight - footHeight, palaceWidth/2, footHeight,'black'));
+        let gongwei = new Rectangle(palaceWidth/4*3, palaceHeight - footHeight, palaceWidth/4, footHeight, 'black');
+        gongwei.addChild(new CustomText(palaceWidth/8-10, (footHeight-40)/2, plate.getPalaces()[index].duty, '20px Arial', 'black'));
+        palace.addChild(gongwei);
         scene.addChild(palace);
     }
     //   scene.addChild(rect);
